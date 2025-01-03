@@ -26,7 +26,7 @@
 .toggle-slider {
   appearance: none;
   width: 48px;
-  height: 26px;
+  height: 29px;
   background-color: #ccc;
   border-radius: 9999px;
   position: relative;
@@ -34,7 +34,7 @@
 }
 
 .toggle-slider:checked {
-  background-color: #10b981;
+  background-color: #0b724f;
 }
 
 .toggle-slider:before {
@@ -50,5 +50,5 @@
 }
 
 .toggle-slider:checked:before {
-  transform: translateX(22px);
+  transform: translateX(20px);
 }

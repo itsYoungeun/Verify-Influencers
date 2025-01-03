@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { 
   Brain, 
   Moon, 
@@ -36,7 +37,12 @@ const InfluencerPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
+    <motion.div 
+      className="min-h-screen bg-gray-900 text-gray-100 p-8"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+    >
       {/* Profile Header */}
       <div className="max-w-7xl mx-auto">
         <div className="flex items-start gap-6 mb-12">
@@ -151,7 +157,7 @@ const InfluencerPage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

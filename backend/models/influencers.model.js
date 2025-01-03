@@ -5,6 +5,29 @@ const influencerSchema = new mongoose.Schema({
         type: String,
         required: [true, "Please enter your name!"],
     },
+    profilePhoto: String,
+    bio: String,
+    categories:[{
+        type: String,
+        enum: [
+            'Sleep',
+            'Performance',
+            'Hormones',
+            'Nutrition',
+            'Exercise',
+            'Stress',
+            'Cognition',
+            'Motivation',
+            'Recovery',
+            'Mental Health'
+        ]
+    }],
+    trustScore: {
+        type: Number,
+        min: 0,
+        max: 100,
+    },
+    yearlyRevenue: Number,
     email: {
         type: String,
         required: [true, "Please enter your email!"],
@@ -25,7 +48,11 @@ const influencerSchema = new mongoose.Schema({
         type: String,
         enum: ["influencer", "admin"],
         default: "influencer",
-    }
+    },
+    products: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+    }],
 }, {
     timestamps: true
 });
