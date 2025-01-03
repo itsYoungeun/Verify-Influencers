@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import HomePage from './pages/HomePage';
+import InfluencerPage from './pages/InfluencerPage';
 import SignUpPage from './pages/SignUpPage';
 import LoginPage from './pages/LoginPage';
 import ResearchTasksPage from './pages/ResearchTasksPage';
@@ -19,6 +20,7 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/influencers" element={<InfluencerPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/research-tasks" element={<ResearchTasksPage />} />

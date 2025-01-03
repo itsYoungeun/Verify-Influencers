@@ -1,8 +1,14 @@
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const HomePage = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-center bg-gray-900 overflow-y-auto">
+    <motion.div 
+      className="flex flex-col items-center justify-center py-40 bg-gray-900 overflow-y-auto"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+    >
       <h1
         className="text-4xl font-extrabold mb-4"
         style={{ fontFamily: "'Merriweather', serif", color: 'white' }}
@@ -18,13 +24,13 @@ const HomePage = () => {
       <div className="mt-6">
         <Link to="/research-tasks">
           <button
-            className="px-6 py-3 bg-emerald-600 text-white font-medium text-lg rounded-md shadow-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+            className="px-6 py-3 bg-emerald-600 text-white font-medium text-lg rounded-md shadow-md hover:bg-emerald-700"
           >
             Research Influencers
           </button>
         </Link>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

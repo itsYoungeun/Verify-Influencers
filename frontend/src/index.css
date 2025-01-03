@@ -15,4 +15,40 @@
   ::-webkit-scrollbar-track {
     background-color: #1a202c; /* Darker background for the track */
   }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
   
+/* Tailwind CSS Toggle Slider */
+.toggle-slider {
+  appearance: none;
+  width: 48px;
+  height: 26px;
+  background-color: #ccc;
+  border-radius: 9999px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.toggle-slider:checked {
+  background-color: #10b981;
+}
+
+.toggle-slider:before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 18px;
+  height: 18px;
+  background-color: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.toggle-slider:checked:before {
+  transform: translateX(22px);
+}
