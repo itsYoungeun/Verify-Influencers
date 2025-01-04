@@ -1,6 +1,27 @@
-import { Users, CheckCircle, TrendingUp } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Users, CheckCircle, TrendingUp, TrendingDown } from 'lucide-react';
 
 const LeaderboardPage = () => {
+  const [influencers, setInfluencers] = useState([]);
+  const [sortedInfluencers, setSortedInfluencers] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [isSortedByTrust, setIsSortedByTrust] = useState(false);
+
+  useEffect(() => {
+    const fetchInfluencers = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/influencers');
+        const data = await response.json();
+        setInfluencers(data);
+        setSortedInfluencers(data);
+      } catch (error) {
+        console.error('Error fetching influencers:', error);
+      }
+    };
+
+    fetchInfluencers();
+  }, []);
+
   const stats = [
     { icon: <Users className="w-6 h-6 text-emerald-400" />, value: "1,234", label: "Active Influencers" },
     { icon: <CheckCircle className="w-6 h-6 text-emerald-400" />, value: "25,431", label: "Claims Verified" },
@@ -9,29 +30,29 @@ const LeaderboardPage = () => {
 
   const categories = ["All", "Nutrition", "Fitness", "Medicine", "Mental Health"];
 
-  const influencers = [
-    {
-      rank: 1,
-      name: "Dr. Peter Attia",
-      category: "Medicine",
-      trustScore: 94,
-      trend: "up",
-      followers: "1.2M+",
-      verifiedClaims: 203,
-      imageUrl: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop"
-    },
-    {
-      rank: 2,
-      name: "Dr. Rhonda Patrick",
-      category: "Nutrition",
-      trustScore: 91,
-      trend: "up",
-      followers: "980K+",
-      verifiedClaims: 156,
-      imageUrl: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=150&h=150&fit=crop"
-    },
-    // Add more influencers as needed
-  ];
+  const handleSortByTrust = () => {
+    setIsSortedByTrust(!isSortedByTrust);
+    const filteredInfluencers = selectedCategory === 'All'
+      ? influencers
+      : influencers.filter((influencer) => influencer.category === selectedCategory);
+
+    const sortedData = [...filteredInfluencers].sort((a, b) => {
+      return isSortedByTrust
+        ? a.trustScore - b.trustScore
+        : b.trustScore - a.trustScore;
+    });
+
+    setSortedInfluencers(sortedData);
+  };
+
+  const handleCategoryFilter = (category) => {
+    setSelectedCategory(category);
+    if (category === "All") {
+      setSortedInfluencers(influencers);
+    } else {
+      setSortedInfluencers(influencers.filter((influencer) => influencer.category === category));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
@@ -44,7 +65,7 @@ const LeaderboardPage = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {stats.map((stat, index) => (
-            <div key={index} className="bg-gray-800 rounded-lg p-6 flex items-center space-x-4">
+            <div key={index} className="bg-gray-800 rounded-lg p-6 flex items-center space-x-4 pl-8">
               {stat.icon}
               <div>
                 <div className="text-2xl font-bold">{stat.value}</div>
@@ -59,16 +80,18 @@ const LeaderboardPage = () => {
           {categories.map((category, index) => (
             <button
               key={index}
-              className={`px-4 py-2 rounded-full ${
-                index === 0 ? 'bg-emerald-500 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
+              className={`px-4 py-2 rounded-full ${category === selectedCategory ? 'bg-emerald-500 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+              onClick={() => handleCategoryFilter(category)}
             >
               {category}
             </button>
           ))}
-          <button className="ml-auto px-4 py-2 rounded-full bg-gray-800 text-gray-300 hover:bg-gray-700 flex items-center gap-2">
+          <button
+            onClick={handleSortByTrust}
+            className="ml-auto px-4 py-2 rounded-full bg-gray-800 text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+          >
             <TrendingUp className="w-4 h-4" />
-            Highest First
+            {isSortedByTrust ? 'Lowest First' : 'Highest First'}
           </button>
         </div>
 
@@ -87,7 +110,7 @@ const LeaderboardPage = () => {
               </tr>
             </thead>
             <tbody>
-              {influencers.map((influencer) => (
+              {sortedInfluencers.map((influencer) => (
                 <tr key={influencer.rank} className="border-t border-gray-700 hover:bg-gray-750">
                   <td className="p-4 font-medium">#{influencer.rank}</td>
                   <td className="p-4">
@@ -105,9 +128,11 @@ const LeaderboardPage = () => {
                     <span className="text-emerald-400">{influencer.trustScore}%</span>
                   </td>
                   <td className="p-4">
-                    <TrendingUp className={`w-5 h-5 ${
-                      influencer.trend === 'up' ? 'text-emerald-400' : 'text-red-400'
-                    }`} />
+                    {influencer.trend === 'up' ? (
+                      <TrendingUp className="w-5 h-5 text-emerald-400" />
+                    ) : (
+                      <TrendingDown className="w-5 h-5 text-red-400" />
+                    )}
                   </td>
                   <td className="p-4">{influencer.followers}</td>
                   <td className="p-4">{influencer.verifiedClaims}</td>
