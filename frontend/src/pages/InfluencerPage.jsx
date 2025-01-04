@@ -38,7 +38,7 @@ const InfluencerPage = () => {
     >
       <div className="max-w-7xl mx-auto">
         {influencers.map((influencer) => (
-          <div key={influencer.rank} className="flex items-start gap-6 mb-12">
+          <div key={influencer._id} className="flex items-start gap-6 mb-12">
             <img
               src={influencer.imageUrl || 'default-profile-image-url'}
               alt={influencer.name}
@@ -46,7 +46,7 @@ const InfluencerPage = () => {
             />
             <div className="flex-1">
               <h1 className="text-4xl font-bold mb-2">
-                <Link to={`/influencers/${influencer.name.toLowerCase().replace(/\s+/g, '')}`}>
+                <Link to={`/influencers/${influencer._id}`}>
                   {influencer.name}
                 </Link>
               </h1>

@@ -1,7 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import InfluencerPage from './pages/InfluencerPage';
-import InfluencerDetail from './pages/InfluencerDetailPage';
+import InfluencerDetailPage from './pages/InfluencerDetailPage';
 import SignUpPage from './pages/SignUpPage';
 import LoginPage from './pages/LoginPage';
 import ResearchTasksPage from './pages/ResearchTasksPage';
@@ -22,7 +22,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/influencers" element={<InfluencerPage />} />
-          <Route path="/influencers/:name" element={<InfluencerDetail />} />
+          <Route path="/influencers/:id" element={<InfluencerDetailPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/research-tasks" element={<ResearchTasksPage />} />

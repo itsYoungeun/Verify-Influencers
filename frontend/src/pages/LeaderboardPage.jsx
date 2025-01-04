@@ -125,7 +125,14 @@ const LeaderboardPage = () => {
                   </td>
                   <td className="p-4">{influencer.category}</td>
                   <td className="p-4">
-                    <span className="text-emerald-400">{influencer.trustScore}%</span>
+                    <span 
+                      className={`
+                        ${influencer.trustScore >= 90 ? 'text-emerald-400' : 
+                          influencer.trustScore >= 80 ? 'text-yellow-400' :
+                          influencer.trustScore >= 70 ? 'text-orange-400' : 'text-red-400'}
+                    `}>
+                      {influencer.trustScore}%
+                    </span>
                   </td>
                   <td className="p-4">
                     {influencer.trend === 'up' ? (
