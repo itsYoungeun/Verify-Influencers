@@ -35,6 +35,7 @@ const influencerSchema = new mongoose.Schema(
       type: String,
       required: [true, "Image URL is required!"],
     },
+    // claims: [claimSchema]
   },
   {
     timestamps: true, // Adds createdAt and updatedAt fields automatically

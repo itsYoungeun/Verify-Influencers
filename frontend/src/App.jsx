@@ -1,16 +1,17 @@
 import { Route, Routes } from 'react-router-dom';
 import HomePage from './pages/HomePage';
-import InfluencerPage from './pages/InfluencerPage';
-import InfluencerDetailPage from './pages/InfluencerDetailPage';
 import SignUpPage from './pages/SignUpPage';
 import LoginPage from './pages/LoginPage';
-import ResearchTasksPage from './pages/ResearchTasksPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import ProductPage from './pages/ProductPage';
 import MonetizationPage from './pages/MonetizationPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import AdminPage from './pages/AdminPage';
+
+import ResearchTasksPage from './influencer/ResearchTasksPage';
+import InfluencerPage from './influencer/InfluencerPage';
+import InfluencerDetailPage from './influencer/InfluencerDetailPage';
 
 import Navbar from './components/Navbar';
 
