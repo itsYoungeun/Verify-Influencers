@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import { BarChart, PlusCircle, Cross, ShoppingCart } from "lucide-react";
 import { useState } from "react";
-import AddInfluencerForm from "../components/addInfluencerForm";
-import AddClaimForm from "../components/addClaimForm";
-import AddResearchForm from "../components/addResearchForm";
+import AddInfluencerForm from "../components/AddInfluencerForm";
+import AddClaimForm from "../components/AddClaimForm";
+import AddResearchForm from "../components/AddResearchForm";
 
 const tabs = [
 	{ id: "influencer", label: "Add Influencer", icon: PlusCircle },
