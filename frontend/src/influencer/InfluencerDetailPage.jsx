@@ -1,5 +1,6 @@
+import { calculateClaimTrustScore } from '../components/calculateClaimScore'
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Search, Calendar, 
   Filter, ExternalLink,
@@ -7,43 +8,199 @@ import {
   TrendingDown,
   DollarSign,
   Package,
-  Users
+  Users,
+  Brain
 } from 'lucide-react';
+import moment from 'moment';
 
 const InfluencerDetailPage = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
+  const { id } = useParams();
+  const location = useLocation();
+
   const [influencer, setInfluencer] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [filterCategories, setFilterCategories] = useState(['All Categories']);
+  const [displayCategories, setDisplayCategories] = useState([]);
+
+  const [claims, setClaims] = useState([]);
+  const [filteredClaims, setFilteredClaims] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const secondToggle = location.state?.secondToggle || false;
+
   const [activeTab, setActiveTab] = useState('Claims Analysis');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedStatus, setSelectedStatus] = useState('All Statuses');
   const [sortBy, setSortBy] = useState('Date');
 
-  const categories = [
-    'All Categories', 'Sleep', 'Performance', 'Hormones', 'Nutrition',
-    'Exercise', 'Stress', 'Cognition', 'Motivation', 'Recovery', 'Mental Health'
-  ];
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const categoryRelationships = {
+    'Medicine': [
+      'Sleep', 'Hormones', 'Mental Health', 'Recovery'
+    ],
+    'Fitness': [
+      'Exercise', 'Performance', 'Nutrition', 'Recovery'
+    ],
+    'Nutrition': [
+      'Sleep', 'Performance', 'Hormones', 'Mental Health'
+    ],
+    'Mental Health': [
+      'Sleep', 'Stress', 'Cognition', 'Motivation'
+    ]
+  };
+
+  const getRelatedCategories = (mainCategory) => {
+    return [mainCategory, ...(categoryRelationships[mainCategory] || [])];
+  };
 
   const verificationStatuses = ['All Statuses', 'Verified', 'Questionable', 'Debunked'];
 
+  const determineVerificationStatus = (claim) => {
+    if (claim.verifiedSources?.length > 2) return 'Verified';
+    if (claim.verifiedSources?.length > 0) return 'Questionable';
+    return 'Debunked';
+  };
+
+  const getVerificationStatus = (claim, secondToggle) => {
+    if (!secondToggle) return claim.category;
+  
+    // Calculate the trust score based on the claim's date
+    const trustScore = calculateClaimTrustScore(claim.date);
+  
+    // Logic to determine verification status based on the trust score
+    if (trustScore >= 90) {
+      return ['Verified'];
+    } else if (trustScore >= 70) {
+      const daysSinceClaim = moment().diff(moment(claim.date), 'days');
+      // Add additional logic if needed for dates close to today
+      if (daysSinceClaim < 30) {
+        return ['Verified']; // New claims with reasonable score are "Verified"
+      }
+      return ['Questionable'];
+    } else {
+      return ['Debunked'];
+    }
+  };
+
+  const sortClaims = (claims, sortBy) => {
+    return [...claims].sort((a, b) => {
+      switch (sortBy) {
+        case 'Date':
+          return moment(b.date).valueOf() - moment(a.date).valueOf();
+        case 'Trust Score':
+          return calculateClaimTrustScore(b.date) - calculateClaimTrustScore(a.date);
+        default:
+          return 0;
+      }
+    });
+  };
+
+  const filterClaimsByStatus = (claims, selectedStatus, secondToggle) => {
+    if (selectedStatus === 'All Statuses') return claims;
+  
+    return claims.filter(claim => {
+      if (!secondToggle) return true;
+  
+      const trustScore = calculateClaimTrustScore(claim.date);
+      
+      switch (selectedStatus) {
+        case 'Verified':
+          return trustScore >= 90;
+        case 'Questionable':
+          return trustScore >= 70 && trustScore < 90;
+        case 'Debunked':
+          return trustScore < 70;
+        default:
+          return true;
+      }
+    });
+  };
+
   useEffect(() => {
-    const fetchInfluencer = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/influencers/${id}`);
-        if (!response.ok) throw new Error('Failed to fetch influencer details');
-        const data = await response.json();
-        setInfluencer(data);
+        const influencerResponse = await fetch(`http://localhost:5000/api/influencers/${id}`);
+        if (!influencerResponse.ok) throw new Error('Failed to fetch influencer details');
+        const influencerData = await influencerResponse.json();
+        setInfluencer(influencerData);
+
+        if (influencerData.category) {
+          const relatedCats = getRelatedCategories(influencerData.category);
+          // Set display categories without "All Categories"
+          setDisplayCategories(relatedCats);
+          // Set filter categories with "All Categories"
+          setFilterCategories(['All Categories', ...relatedCats]);
+
+          // Fetch claims using all related categories
+          const categoriesString = relatedCats.join(',');
+
+          const claimsResponse = await fetch(
+            `http://localhost:5000/api/claims?categories=${categoriesString}`
+          );
+          if (!claimsResponse.ok) throw new Error('Failed to fetch claims data');
+          const claimsData = await claimsResponse.json();
+
+          const enrichedClaims = claimsData.map(claim => ({
+            ...claim,
+            verificationStatus: determineVerificationStatus(claim),
+          }));
+
+          setClaims(enrichedClaims);
+          setFilteredClaims(enrichedClaims);
+        }
         setLoading(false);
       } catch (err) {
         setError(err.message);
         setLoading(false);
       }
     };
-    fetchInfluencer();
+
+    fetchData();
   }, [id]);
+
+  useEffect(() => {
+    if (claims.length > 0) {
+      let filtered = claims;
+  
+      // Apply category filter
+      if (selectedCategory !== 'All Categories') {
+        filtered = filtered.filter(claim => 
+          claim.category.includes(selectedCategory)
+        );
+      }
+  
+      // Apply verification status filter
+      filtered = filterClaimsByStatus(filtered, selectedStatus, secondToggle);
+  
+      // Apply time range filter if specified
+      if (location.state?.timeRange) {
+        const now = moment();
+        filtered = filtered.filter(claim => {
+          const claimDate = moment(claim.date);
+          switch(location.state.timeRange) {
+            case 'week':
+              return now.diff(claimDate, 'weeks') <= 1;
+            case 'month':
+              return now.diff(claimDate, 'months') <= 1;
+            case 'year':
+              return now.diff(claimDate, 'years') <= 1;
+            default:
+              return true;
+          }
+        });
+      }
+
+      // Apply sorting
+      filtered = sortClaims(filtered, sortBy);
+
+      // Apply claims count limit
+      const maxClaims = location.state?.claimsCount || 50;
+      filtered = filtered.slice(0, maxClaims);
+
+      setFilteredClaims(filtered);
+    }
+  }, [selectedCategory, selectedStatus, sortBy, claims, location.state, secondToggle]);
 
   if (loading) return <div className="min-h-screen bg-gray-900 p-8">Loading...</div>;
   if (error) return <div className="min-h-screen bg-gray-900 p-8">Error: {error}</div>;
@@ -92,7 +249,7 @@ const InfluencerDetailPage = () => {
           <div className="flex-1">
             <h1 className="text-3xl font-bold mb-3">{influencer.name}</h1>
             <div className="flex flex-wrap gap-2 mb-4">
-              {categories.map((item, index) => (
+              {displayCategories.map((item, index) => (
                 <span key={index} className="bg-gray-800 text-gray-300 px-3 py-1 rounded-full text-sm">
                   {item}
                 </span>
@@ -152,7 +309,7 @@ const InfluencerDetailPage = () => {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs for Claims, Products, or Monetization */}
         <div className="border-b border-gray-800">
           <nav className="flex gap-6">
             {['Claims Analysis', 'Recommended Products', 'Monetization'].map((tab) => (
@@ -186,10 +343,10 @@ const InfluencerDetailPage = () => {
               />
             </div>
 
-            {/* Filters */}
+            {/* Filters by Category */}
             <div className="flex flex-col gap-4 mb-6">
-              <div className="flex flex-wrap gap-4">
-                {categories.map((category) => (
+              <div className="flex flex-wrap gap-4 mb-6">
+                {filterCategories.map((category) => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
@@ -204,15 +361,16 @@ const InfluencerDetailPage = () => {
                 ))}
               </div>
 
+              {/* Status by Verification */}
               <div className="flex justify-between items-center">
                 <div className="flex gap-4">
                   {verificationStatuses.map((status) => (
                     <button
                       key={status}
-                      onClick={() => setSelectedStatus(status)}
+                      onClick={() => setSelectedStatus(status)} // Update the selected status
                       className={`px-4 py-2 rounded-full text-sm ${
                         selectedStatus === status
-                          ? 'bg-emerald-500 text-white'
+                          ? 'bg-emerald-500 text-white' // Highlight the selected status
                           : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                       }`}
                     >
@@ -221,6 +379,24 @@ const InfluencerDetailPage = () => {
                   ))}
                 </div>
 
+                {/* Filtered Claims */}
+                <div>
+                  {claims
+                    .filter((claim) => {
+                      // Check the claim's verification status matches the selected status
+                      const claimStatus = getVerificationStatus(claim); // Assuming getVerificationStatus returns an array or a string
+                      return selectedStatus === 'All' || claimStatus.includes(selectedStatus);
+                    })
+                    .map((claim) => (
+                      <div key={claim.id} className="claim">
+                        {/* Render each claim as needed */}
+                        <span>{claim.name}</span>
+                        <span>{getVerificationStatus(claim).join(', ')}</span> {/* Show the verification status */}
+                      </div>
+                    ))}
+                </div>
+
+                {/* Sort */}
                 <div className="flex items-center gap-2">
                   <span className="text-gray-400">Sort By:</span>
                   <select
@@ -230,7 +406,6 @@ const InfluencerDetailPage = () => {
                   >
                     <option>Date</option>
                     <option>Trust Score</option>
-                    <option>Popularity</option>
                   </select>
                   <button className="p-2 bg-gray-800 rounded-lg">
                     <Filter className="h-5 w-5 text-gray-400" />
@@ -241,26 +416,94 @@ const InfluencerDetailPage = () => {
 
             {/* Claims List */}
             <div className="space-y-4">
-              {influencer.claims?.map((claim, index) => (
+              {filteredClaims.map((claim, index) => (
                 <div key={index} className="bg-gray-800/50 rounded-xl p-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="bg-emerald-500/20 text-emerald-500 px-3 py-1 rounded-full text-xs">
-                      verified
-                    </span>
+                  <div className="flex items-center gap-2 mb-2 w-full">
+                  {/* Left-aligned content */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-row gap-2">
+                      {getVerificationStatus(claim, secondToggle).map((status, catIndex) => (
+                        <span
+                          key={catIndex}
+                          className={`px-3 py-1 rounded-full text-xs ${
+                            secondToggle
+                              ? status === 'Verified'
+                                ? 'bg-green-500/20 text-green-500'
+                                : status === 'Questionable'
+                                ? 'bg-yellow-500/20 text-yellow-500'
+                                : 'bg-red-500/20 text-red-500'
+                              : 'bg-gray-500/20 text-white-500'
+                          }`}
+                        >
+                          {status}
+                        </span>
+                      ))}
+                    </div>
                     <Calendar className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-400 text-sm">{claim.date}</span>
+                    <span className="text-gray-400 text-sm">{moment(claim.date).format('MM/DD/YYYY')}</span>
                   </div>
-                  <h3 className="text-lg font-medium mb-2">{claim.title}</h3>
-                  <p className="text-gray-400 mb-4">{claim.description}</p>
+                  {/* Right-aligned trust score */}
+                  <div className="ml-auto flex items-center">
+                    <p
+                      className={`text-gray-400 text-lg leading-relaxed ${
+                        calculateClaimTrustScore(claim.date) >= 90
+                          ? 'text-green-500'
+                          : calculateClaimTrustScore(claim.date) >= 80
+                          ? 'text-yellow-500'
+                          : calculateClaimTrustScore(claim.date) >= 70
+                          ? 'text-orange-500'
+                          : 'text-red-500'
+                      }`}
+                    >
+                      {calculateClaimTrustScore(claim.date)}%
+                    </p>
+                  </div>
+                </div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium mb-2">{claim.title}</h3>
+                    <p className="text-gray-400 leading-relaxed mb-2">Trust Score</p>
+                  </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-emerald-400">
-                      <ExternalLink className="h-4 w-4" />
-                      <a href={claim.source} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      <a
+                        href={claim.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                      >
                         View Source
                       </a>
+                      <ExternalLink className="h-4 w-4" />
                     </div>
-                    <span className="text-emerald-500 font-medium">{claim.trustScore}% Trust Score</span>
                   </div>
+                  {/* AI Analysis */}
+                  {secondToggle && (
+                    <div className="flex flex-col items-start mt-4 ml-1 space-y-2">
+                      {/* AI Analysis section */}
+                      <div className="flex items-center gap-2">
+                        <Brain className="text-emerald-400 p-1" />
+                        <span>AI Analysis</span>
+                      </div>
+
+                      {/* Research description section */}
+                      <div className="flex items-center gap-2">
+                        {/* <p className="text-gray-400">{research.title}</p> */}
+                      </div>
+
+                      {/* View Research section */}
+                      <div className="flex items-center gap-2 text-emerald-400">
+                        <a
+                          href={claim.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline ml-1"
+                        >
+                          View Research
+                        </a>
+                        <ExternalLink className="h-4 w-4" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

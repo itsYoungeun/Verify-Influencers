@@ -1,4 +1,5 @@
 import Influencer from "../models/influencer.model.js";
+import mongoose from "mongoose";
 
 export const createInfluencer = async (req, res) => {
   try {

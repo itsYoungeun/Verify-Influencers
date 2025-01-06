@@ -10,7 +10,7 @@ const ResearchTasksPage = () => {
   const [activeButton, setActiveButton] = useState(null);
   const [timeButton, setTimeButton] = useState(null);
   const [firstToggle, setFirstToggle] = useState(false);
-  const [secondToggle, setSecondToggle] = useState(false);
+  const [secondToggle, setSecondToggle] = useState(true);
   const existingJournals = [
     "PubMed Central",
     "Nature",
@@ -68,15 +68,14 @@ const ResearchTasksPage = () => {
         influencer.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
   
-      const resultsWithClaims = filteredResults.map((influencer) => ({
-        ...influencer
-      }));
-  
       navigate("/influencers", {
         state: {
           searchQuery: searchQuery.trim(),
           isSpecificSearch: true,
-          influencers: resultsWithClaims,
+          influencers: filteredResults,
+          timeRange: timeButton,
+          claimsCount: claimsCount,
+          secondToggle
         },
       });
     }
@@ -152,15 +151,17 @@ const ResearchTasksPage = () => {
 
   const handleStartResearch = () => {
     if (discoverActive) {
-      // Shuffle influencers and get 10 random influencers
       const randomInfluencers = [...influencers]
-        .sort(() => Math.random() - 0.5) // Random shuffle
-        .slice(0, 10); // Slice to get the first 10 influencers
-    
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 10);
+  
       navigate("/influencers", {
         state: {
           isDiscover: true,
           influencers: randomInfluencers,
+          timeRange: timeButton,
+          claimsCount: claimsCount,
+          secondToggle
         },
       });
     }

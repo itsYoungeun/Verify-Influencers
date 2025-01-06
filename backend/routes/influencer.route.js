@@ -1,7 +1,5 @@
 import express from "express";
-import Influencer from '../models/influencer.model.js';
 import { createInfluencer, fetchInfluencer, getInfluencerById } from "../controllers/influencer.controller.js";
-import mongoose from 'mongoose';
 
 const router = express.Router();
 

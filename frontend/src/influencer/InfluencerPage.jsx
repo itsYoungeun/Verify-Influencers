@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 
 const InfluencerPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [influencers, setInfluencers] = useState([]);
   const [filteredInfluencers, setFilteredInfluencers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const { searchQuery, isSpecificSearch } = location.state || {};
+  const secondToggle = location.state?.secondToggle || false;
 
   useEffect(() => {
     if (location.state?.influencers) {
@@ -38,6 +40,15 @@ const InfluencerPage = () => {
     }
   }, [location.state?.influencers]);
   
+  const navigateToInfluencerDetail = (id) => {
+    navigate(`/influencers/${id}`, {
+      state: { 
+        secondToggle,
+        timeRange: location.state?.timeRange,
+        claimsCount: location.state?.claimsCount
+      }
+    });
+  };
 
   useEffect(() => {
     if (isSpecificSearch && searchQuery) {
@@ -76,21 +87,35 @@ const InfluencerPage = () => {
         ) : (
           filteredInfluencers.map((influencer) => (
             <div key={influencer._id} className="flex items-start gap-6 mb-12">
-              <Link to={`/influencers/${influencer._id}`}>
+              <div 
+                onClick={() => navigateToInfluencerDetail(influencer._id)} 
+                className="cursor-pointer"
+              >
                 <img
                   src={influencer.imageUrl || 'default-profile-image-url'}
                   alt={influencer.name}
                   className="w-32 h-32 rounded-full object-cover"
                 />
-              </Link>
+              </div>
               <div className="flex-1">
-                <h1 className="text-4xl font-bold mb-2">
-                  <Link to={`/influencers/${influencer._id}`}>
-                    {influencer.name}
-                  </Link>
+                <h1 
+                  className="text-4xl font-bold mb-2 cursor-pointer"
+                  onClick={() => navigateToInfluencerDetail(influencer._id)}
+                >
+                  {influencer.name}
                 </h1>
+                <div className="flex">
+                  <p className="text-gray-400 leading-relaxed mr-1">Trust Score</p>
+                  <p className={`flex items-center
+                          ${influencer.trustScore >= 90 ? 'text-emerald-400' : 
+                            influencer.trustScore >= 80 ? 'text-yellow-400' :
+                            influencer.trustScore >= 70 ? 'text-orange-400' : 'text-red-400'}
+                      `} 
+                  >
+                    {influencer.trustScore}%
+                  </p>
+                </div>
                 <p className="text-gray-400 leading-relaxed">{influencer.category}</p>
-                <p className="text-gray-400 leading-relaxed">{influencer.verifiedClaims} verified claims</p>
               </div>
             </div>
           ))
