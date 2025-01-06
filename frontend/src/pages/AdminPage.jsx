@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import { BarChart, PlusCircle, Cross, ShoppingCart } from "lucide-react";
 import { useState } from "react";
-import AddInfluencer from "../components/addInfluencerForm";
-import AddClaim from "../components/addClaimForm";
-import AddResearch from "../components/addResearchForm";
+import AddInfluencerForm from "../components/addInfluencerForm";
+import AddClaimForm from "../components/addClaimForm";
+import AddResearchForm from "../components/addResearchForm";
 
 const tabs = [
 	{ id: "influencer", label: "Add Influencer", icon: PlusCircle },
@@ -45,9 +45,9 @@ const AdminPage = () => {
 						</button>
 					))}
 				</div>
-				{activeTab === "influencer" && <AddInfluencer />}
-				{activeTab === "claims" && <AddClaim />}
-				{activeTab === "research" && <AddResearch />}
+				{activeTab === "influencer" && <AddInfluencerForm />}
+				{activeTab === "claims" && <AddClaimForm />}
+				{activeTab === "research" && <AddResearchForm />}
         {/* {activeTab === "product" && <ProductPage />} */}
 			</div>
 		</motion.div>
