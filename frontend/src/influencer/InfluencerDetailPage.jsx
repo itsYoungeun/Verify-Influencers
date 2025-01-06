@@ -16,6 +16,7 @@ import {
   Users,
   Brain
 } from 'lucide-react';
+import { motion } from "framer-motion";
 import moment from 'moment';
 
 const InfluencerDetailPage = () => {
@@ -41,8 +42,8 @@ const InfluencerDetailPage = () => {
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
-  const location = useLocation();
   const handleGoBack = () => navigate(-1);
+  const location = useLocation();
   const secondToggle = location.state?.secondToggle || false;
 
   const categoryRelationships = {
@@ -62,6 +63,34 @@ const InfluencerDetailPage = () => {
 
   const getRelatedCategories = (mainCategory) => {
     return [mainCategory, ...(categoryRelationships[mainCategory] || [])];
+  };
+
+  // Helper function to shuffle the claims randomly
+  const shuffleArray = (array) => {
+    const shuffledArray = [...array];
+    for (let i = shuffledArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]]; // Swap elements
+    }
+    return shuffledArray;
+  };
+
+  // Filter claims based on the search query
+  const filterClaims = (query) => {
+    if (query) {
+      return claims.filter((claim) =>
+        claim.title.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+    return [];
+  };
+
+  // Handle claim click, updating the filtered list to show only the clicked claim
+  const handleClaimClick = (claim) => {
+    setSelectedClaimId(claim.id);
+    setSearchQuery(claim.title); // Update search query to the selected claim
+    setFilteredClaims([claim]); // Filter the list to show only the selected claim
+    setIsDropdownVisible(false);   // Hide the dropdown after selecting a claim
   };
 
   useEffect(() => {
@@ -183,39 +212,16 @@ const InfluencerDetailPage = () => {
     }
   }, [selectedCategory, selectedStatus, sortBy, claims, location.state, secondToggle, searchQuery]);
 
-  // Helper function to shuffle the claims randomly
-  const shuffleArray = (array) => {
-    const shuffledArray = [...array];
-    for (let i = shuffledArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]]; // Swap elements
-    }
-    return shuffledArray;
-  };
-
-  // Filter claims based on the search query
-  const filterClaims = (query) => {
-    if (query) {
-      return claims.filter((claim) =>
-        claim.title.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-    return [];
-  };
-
-  // Handle claim click, updating the filtered list to show only the clicked claim
-  const handleClaimClick = (claim) => {
-    setSelectedClaimId(claim.id);
-    setSearchQuery(claim.title); // Update search query to the selected claim
-    setFilteredClaims([claim]); // Filter the list to show only the selected claim
-    setIsDropdownVisible(false);   // Hide the dropdown after selecting a claim
-  };
-
   if (loading) return <div className="min-h-screen bg-gray-900 p-8">Loading...</div>;
   if (error) return <div className="min-h-screen bg-gray-900 p-8">Error: {error}</div>;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100">
+    <motion.div 
+      className="min-h-screen bg-gray-900 text-gray-100"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+    >
       {/* Header Section */}
       <div className="p-8">
         <div className="flex items-start gap-6 mb-12">
@@ -545,7 +551,7 @@ const InfluencerDetailPage = () => {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

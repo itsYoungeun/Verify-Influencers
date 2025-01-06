@@ -1,4 +1,6 @@
 import { Shield, LineChart, Users, Search, Award, Database } from 'lucide-react';
+import { useEffect } from 'react';
+import { motion } from "framer-motion";
 
 const AboutPage = () => {
   const stats = [
@@ -41,8 +43,17 @@ const AboutPage = () => {
     }
   ];
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-slate-900 text-gray-100">
+    <motion.div 
+      className="min-h-screen bg-slate-900 text-gray-100"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+    >
       {/* Hero Section */}
       <div className="py-20 px-6">
         <div className="max-w-6xl mx-auto text-center">
@@ -149,7 +160,7 @@ const AboutPage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

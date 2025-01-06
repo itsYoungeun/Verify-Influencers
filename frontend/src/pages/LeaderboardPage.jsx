@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Users, CheckCircle, TrendingUp, TrendingDown } from 'lucide-react';
+import { motion } from "framer-motion";
 
 const LeaderboardPage = () => {
   const [influencers, setInfluencers] = useState([]);
@@ -8,6 +9,8 @@ const LeaderboardPage = () => {
   const [isSortedByTrust, setIsSortedByTrust] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+    
     const fetchInfluencers = async () => {
       try {
         const response = await fetch('http://localhost:5000/api/influencers');
@@ -55,7 +58,12 @@ const LeaderboardPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <motion.div 
+      className="min-h-screen bg-gray-900 text-white p-8"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+    >
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-bold mb-2">Influencer Trust Leaderboard</h1>
         <p className="text-gray-400 mb-8">
@@ -149,7 +157,7 @@ const LeaderboardPage = () => {
           </table>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, AlertTriangle, ExternalLink, ShoppingBag, DollarSign, Activity, Star, Filter, ArrowUpRight } from 'lucide-react';
+import { motion } from "framer-motion";
 
 const ProductPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
@@ -46,6 +47,10 @@ const ProductPage = () => {
     }
   ];
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'verified': return 'text-emerald-500';
@@ -56,7 +61,12 @@ const ProductPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-gray-100 p-6">
+    <motion.div 
+      className="min-h-screen bg-slate-900 text-gray-100 p-6"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+    >
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -173,7 +183,7 @@ const ProductPage = () => {
           ))}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

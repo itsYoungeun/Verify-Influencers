@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LineChart, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, Bar, ResponsiveContainer } from 'recharts';
 import { DollarSign, Package, ShoppingBag, Users, ArrowUpRight, Filter } from 'lucide-react';
+import { motion } from "framer-motion";
 
 const MonetizationPage = () => {
   const [dateRange, setDateRange] = useState('last-month');
@@ -23,8 +24,17 @@ const MonetizationPage = () => {
     { category: 'Sponsorships', revenue: 500000 }
   ];
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-slate-900 text-gray-100 p-6">
+    <motion.div 
+      className="min-h-screen bg-slate-900 text-gray-100 p-6"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+    >
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -145,7 +155,7 @@ const MonetizationPage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
