@@ -2,7 +2,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Settings, Plus, Search } from "lucide-react"; // Import the gear icon from lucide-react
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import axios from "axios";
 
 const ResearchTasksPage = () => {
   const navigate = useNavigate();
@@ -38,16 +37,14 @@ const ResearchTasksPage = () => {
   const [claimsCount, setClaimsCount] = useState(50);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/influencers") // Replace with your API URL
-      .then(response => setInfluencers(response.data))
-      .catch(error => console.error("Error fetching profiles:", error));
-  }, []);
-
-  useEffect(() => {
     const fetchInfluencers = async () => {
-      const response = await fetch('http://localhost:5000/api/influencers');
-      const data = await response.json();
-      setInfluencers(data);
+      try {
+        const response = await fetch('/api/influencers'); // Proxy to the backend
+        const data = await response.json();
+        setInfluencers(data);
+      } catch (error) {
+        console.error('Error fetching influencers:', error);
+      }
     };
 
     fetchInfluencers();

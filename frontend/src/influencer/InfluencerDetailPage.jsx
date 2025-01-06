@@ -98,7 +98,7 @@ const InfluencerDetailPage = () => {
     
     const fetchData = async () => {
       try {
-        const influencerResponse = await fetch(`http://localhost:5000/api/influencers/${id}`);
+        const influencerResponse = await fetch(`/api/influencers/${id}`);
         if (!influencerResponse.ok) throw new Error('Failed to fetch influencer details');
         const influencerData = await influencerResponse.json();
         setInfluencer(influencerData);
@@ -113,26 +113,24 @@ const InfluencerDetailPage = () => {
           // Fetch claims using all related categories
           const categoriesString = relatedCats.join(',');
 
-          const claimsResponse = await fetch(
-            `http://localhost:5000/api/claims?categories=${categoriesString}`
-          );
-          if (!claimsResponse.ok) throw new Error('Failed to fetch claims data');
-          const claimsData = await claimsResponse.json();
+          // Fetch claims and research concurrently using Promise.all
+          const [claimsResponse, researchResponse] = await Promise.all([
+            fetch(`/api/claims?categories=${categoriesString}`),
+            fetch(`/api/research?categories=${categoriesString}`)
+          ]);
 
-          const enrichedClaims = claimsData.map(claim => ({
-            ...claim
-          }));
+          if (!claimsResponse.ok) throw new Error('Failed to fetch claims data');
+          if (!researchResponse.ok) throw new Error('Failed to fetch research data');
+
+          const claimsData = await claimsResponse.json();
+          const researchData = await researchResponse.json();
+
+          const enrichedClaims = claimsData.map(claim => ({ ...claim }));
 
           setClaims(enrichedClaims);
           setFilteredClaims(enrichedClaims);
 
-          // Fetch research data using the same categories
-          const researchResponse = await fetch(
-            `http://localhost:5000/api/research?categories=${categoriesString}`
-          );
-          if (!researchResponse.ok) throw new Error('Failed to fetch research data');
-          const researchData = await researchResponse.json();
-          // Match research to claims and store in state
+          // Match research data with claims
           const matchedResearch = {};
           enrichedClaims.forEach(claim => {
             const bestMatch = findBestResearchMatch(claim.category, researchData);

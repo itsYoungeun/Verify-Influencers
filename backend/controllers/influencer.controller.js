@@ -13,7 +13,7 @@ export const createInfluencer = async (req, res) => {
 export const fetchInfluencer = async (req, res) => {
     try {
         const influencers = await Influencer.find();
-        res.json(influencers); // Send the fetched influencers as a JSON response
+        res.status(200).json(influencers); // Send the fetched influencers as a JSON response
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error fetching influencers' });

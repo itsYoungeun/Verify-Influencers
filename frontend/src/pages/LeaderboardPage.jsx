@@ -13,10 +13,10 @@ const LeaderboardPage = () => {
     
     const fetchInfluencers = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/influencers');
+        const response = await fetch('/api/influencers'); // Proxy to the backend
         const data = await response.json();
         setInfluencers(data);
-        setSortedInfluencers(data);
+        setSortedInfluencers(data); // Optionally, you can sort here
       } catch (error) {
         console.error('Error fetching influencers:', error);
       }
