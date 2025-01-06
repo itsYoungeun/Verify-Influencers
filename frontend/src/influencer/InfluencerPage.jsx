@@ -15,6 +15,8 @@ const InfluencerPage = () => {
   const secondToggle = location.state?.secondToggle || false;
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+    
     if (location.state?.influencers) {
       setInfluencers(location.state.influencers);
       setFilteredInfluencers(location.state.influencers);
@@ -39,16 +41,6 @@ const InfluencerPage = () => {
       fetchInfluencers();
     }
   }, [location.state?.influencers]);
-  
-  const navigateToInfluencerDetail = (id) => {
-    navigate(`/influencers/${id}`, {
-      state: { 
-        secondToggle,
-        timeRange: location.state?.timeRange,
-        claimsCount: location.state?.claimsCount
-      }
-    });
-  };
 
   useEffect(() => {
     if (isSpecificSearch && searchQuery) {
@@ -64,6 +56,16 @@ const InfluencerPage = () => {
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
+
+  const navigateToInfluencerDetail = (id) => {
+    navigate(`/influencers/${id}`, {
+      state: { 
+        secondToggle,
+        timeRange: location.state?.timeRange,
+        claimsCount: location.state?.claimsCount
+      }
+    });
+  };
 
   return (
     <motion.div 

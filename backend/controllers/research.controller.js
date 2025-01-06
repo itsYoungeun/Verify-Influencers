@@ -3,13 +3,13 @@ import Research from "../models/research.model.js";
 // Add a new claim
 export const addResearch = async (req, res) => {
   try {
-    const { category, title, link } = req.body;
+    const { journal, category, title, link } = req.body;
 
-    if (!category || !title || !link) {
+    if (!journal || !category || !title || !link) {
       return res.status(400).json({ error: "All fields are required!" });
     }
 
-    const research = new Research({ category, title, link });
+    const research = new Research({ journal, category, title, link });
     await research.save();
 
     res.status(201).json({ message: "Research added successfully!", research });

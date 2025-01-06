@@ -1,6 +1,11 @@
-import { calculateClaimTrustScore } from '../components/calculateClaimScore'
+import { parseFollowers, calculateEarnings } from '../utils/calculateEarnings';
+import { calculateClaimTrustScore } from '../utils/calculateClaimScore'
+import { verificationStatuses, getVerificationStatus } from '../utils/verifyClaim';
+import { sortClaims, filterClaimsByStatus } from '../utils/navigateClaims';
+import { findBestResearchMatch } from '../utils/calculateResearch';
+
 import { useEffect, useState } from 'react';
-import { useLocation, useParams, useNavigate } from 'react-router-dom';
+import { useLocation, useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, Search, Calendar, 
   Filter, ExternalLink,
@@ -14,26 +19,29 @@ import {
 import moment from 'moment';
 
 const InfluencerDetailPage = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
-  const location = useLocation();
-
   const [influencer, setInfluencer] = useState(null);
   const [filterCategories, setFilterCategories] = useState(['All Categories']);
   const [displayCategories, setDisplayCategories] = useState([]);
 
   const [claims, setClaims] = useState([]);
+  const [sortBy, setSortBy] = useState('Date');
   const [filteredClaims, setFilteredClaims] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
-  const secondToggle = location.state?.secondToggle || false;
+  const [selectedStatus, setSelectedStatus] = useState('All Statuses');
 
   const [activeTab, setActiveTab] = useState('Claims Analysis');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('All Statuses');
-  const [sortBy, setSortBy] = useState('Date');
+
+  const [researchData, setResearchData] = useState({});
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const handleGoBack = () => navigate(-1);
+  const secondToggle = location.state?.secondToggle || false;
 
   const categoryRelationships = {
     'Medicine': [
@@ -54,70 +62,9 @@ const InfluencerDetailPage = () => {
     return [mainCategory, ...(categoryRelationships[mainCategory] || [])];
   };
 
-  const verificationStatuses = ['All Statuses', 'Verified', 'Questionable', 'Debunked'];
-
-  const determineVerificationStatus = (claim) => {
-    if (claim.verifiedSources?.length > 2) return 'Verified';
-    if (claim.verifiedSources?.length > 0) return 'Questionable';
-    return 'Debunked';
-  };
-
-  const getVerificationStatus = (claim, secondToggle) => {
-    if (!secondToggle) return claim.category;
-  
-    // Calculate the trust score based on the claim's date
-    const trustScore = calculateClaimTrustScore(claim.date);
-  
-    // Logic to determine verification status based on the trust score
-    if (trustScore >= 90) {
-      return ['Verified'];
-    } else if (trustScore >= 70) {
-      const daysSinceClaim = moment().diff(moment(claim.date), 'days');
-      // Add additional logic if needed for dates close to today
-      if (daysSinceClaim < 30) {
-        return ['Verified']; // New claims with reasonable score are "Verified"
-      }
-      return ['Questionable'];
-    } else {
-      return ['Debunked'];
-    }
-  };
-
-  const sortClaims = (claims, sortBy) => {
-    return [...claims].sort((a, b) => {
-      switch (sortBy) {
-        case 'Date':
-          return moment(b.date).valueOf() - moment(a.date).valueOf();
-        case 'Trust Score':
-          return calculateClaimTrustScore(b.date) - calculateClaimTrustScore(a.date);
-        default:
-          return 0;
-      }
-    });
-  };
-
-  const filterClaimsByStatus = (claims, selectedStatus, secondToggle) => {
-    if (selectedStatus === 'All Statuses') return claims;
-  
-    return claims.filter(claim => {
-      if (!secondToggle) return true;
-  
-      const trustScore = calculateClaimTrustScore(claim.date);
-      
-      switch (selectedStatus) {
-        case 'Verified':
-          return trustScore >= 90;
-        case 'Questionable':
-          return trustScore >= 70 && trustScore < 90;
-        case 'Debunked':
-          return trustScore < 70;
-        default:
-          return true;
-      }
-    });
-  };
-
   useEffect(() => {
+    window.scrollTo(0, 0);
+    
     const fetchData = async () => {
       try {
         const influencerResponse = await fetch(`http://localhost:5000/api/influencers/${id}`);
@@ -142,12 +89,28 @@ const InfluencerDetailPage = () => {
           const claimsData = await claimsResponse.json();
 
           const enrichedClaims = claimsData.map(claim => ({
-            ...claim,
-            verificationStatus: determineVerificationStatus(claim),
+            ...claim
           }));
 
           setClaims(enrichedClaims);
           setFilteredClaims(enrichedClaims);
+
+          // Fetch research data using the same categories
+          const researchResponse = await fetch(
+            `http://localhost:5000/api/research?categories=${categoriesString}`
+          );
+          if (!researchResponse.ok) throw new Error('Failed to fetch research data');
+          const researchData = await researchResponse.json();
+          // Match research to claims and store in state
+          const matchedResearch = {};
+          enrichedClaims.forEach(claim => {
+            const bestMatch = findBestResearchMatch(claim.category, researchData);
+            if (bestMatch) {
+              matchedResearch[claim._id] = bestMatch;
+            }
+          });
+
+          setResearchData(matchedResearch);
         }
         setLoading(false);
       } catch (err) {
@@ -168,6 +131,10 @@ const InfluencerDetailPage = () => {
         filtered = filtered.filter(claim => 
           claim.category.includes(selectedCategory)
         );
+      } else {
+        // When "All Categories" is selected, shuffle the claims randomly based on influencer's categories
+        const randomClaims = shuffleArray(filtered);
+        filtered = randomClaims;
       }
   
       // Apply verification status filter
@@ -175,16 +142,19 @@ const InfluencerDetailPage = () => {
   
       // Apply time range filter if specified
       if (location.state?.timeRange) {
-        const now = moment();
+        const currentDate = moment();
         filtered = filtered.filter(claim => {
           const claimDate = moment(claim.date);
+          
           switch(location.state.timeRange) {
             case 'week':
-              return now.diff(claimDate, 'weeks') <= 1;
+              return currentDate.diff(claimDate, 'days') <= 7;
             case 'month':
-              return now.diff(claimDate, 'months') <= 1;
+              return currentDate.diff(claimDate, 'days') <= 30;
             case 'year':
-              return now.diff(claimDate, 'years') <= 1;
+              return currentDate.diff(claimDate, 'days') <= 365;
+            case 'all time':
+              return true;
             default:
               return true;
           }
@@ -194,42 +164,51 @@ const InfluencerDetailPage = () => {
       // Apply sorting
       filtered = sortClaims(filtered, sortBy);
 
-      // Apply claims count limit
+      // Apply search filter if there's a search query
+      if (searchQuery) {
+        filtered = filtered.filter(claim =>
+          claim.title.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+
+      // Apply claims count limit only if no time range is selected
       const maxClaims = location.state?.claimsCount || 50;
-      filtered = filtered.slice(0, maxClaims);
+      if (!location.state?.timeRange) {
+        filtered = filtered.slice(0, maxClaims);
+      }
 
       setFilteredClaims(filtered);
     }
-  }, [selectedCategory, selectedStatus, sortBy, claims, location.state, secondToggle]);
+  }, [selectedCategory, selectedStatus, sortBy, claims, location.state, secondToggle, searchQuery]);
+
+  // Helper function to shuffle the claims randomly
+  const shuffleArray = (array) => {
+    const shuffledArray = [...array];
+    for (let i = shuffledArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]]; // Swap elements
+    }
+    return shuffledArray;
+  };
+
+  // Filter claims based on the search query
+  const filterClaims = (query) => {
+    if (query) {
+      return claims.filter((claim) =>
+        claim.title.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+    return [];
+  };
+
+  // Handle claim click, updating the filtered list to show only the clicked claim
+  const handleClaimClick = (claim) => {
+    setSearchQuery(claim.title); // Update search query to the selected claim
+    setFilteredClaims([claim]); // Filter the list to show only the selected claim
+  };
 
   if (loading) return <div className="min-h-screen bg-gray-900 p-8">Loading...</div>;
   if (error) return <div className="min-h-screen bg-gray-900 p-8">Error: {error}</div>;
-
-  const handleGoBack = () => navigate(-1);
-
-  const parseFollowers = (followers) => {
-    if (typeof followers === "string") {
-      if (followers.includes("M")) return parseFloat(followers) * 1_000_000;
-      if (followers.includes("K")) return parseFloat(followers) * 1_000;
-    }
-    return Number(followers) || 0; // Fallback to 0 if invalid
-  };
-
-  // Calculate earnings based on trust score and followers
-  const calculateEarnings = (trustScore, followers) => {
-    const parsedFollowers = parseFollowers(followers);
-    const earnings = 1.5 * (trustScore / 100) * parsedFollowers;
-    return formatEarnings(earnings);
-  };
-
-  const formatEarnings = (earnings) => {
-    if (earnings >= 1000000) {
-      return (earnings / 1000000).toFixed(1) + 'M';
-    } else if (earnings >= 1000) {
-      return (earnings / 1000).toFixed(1) + 'K';
-    }
-    return earnings.toFixed(2);
-  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
@@ -244,7 +223,7 @@ const InfluencerDetailPage = () => {
           <img
             src={influencer.imageUrl || '/default-avatar.png'}
             alt={influencer.name}
-            className="w-24 h-24 rounded-full object-cover"
+            className="w-24 h-24 rounded-full object-cover mt-12"
           />
           <div className="flex-1">
             <h1 className="text-3xl font-bold mb-3">{influencer.name}</h1>
@@ -255,7 +234,7 @@ const InfluencerDetailPage = () => {
                 </span>
               ))}
             </div>
-            <p className="text-gray-400">{influencer.bio}</p>
+            <p className="text-gray-400 w-3/4">{influencer.bio}</p>
           </div>
         </div>
 
@@ -339,8 +318,30 @@ const InfluencerDetailPage = () => {
                 placeholder="Search claims..."
                 className="w-full bg-gray-800 rounded-lg pl-12 pr-4 py-3 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  const query = e.target.value;
+                  setSearchQuery(query);
+                  setFilteredClaims(filterClaims(query));
+                }}
               />
+            </div>
+
+            {/* Display filtered claims */}
+            <div>
+              {searchQuery && filteredClaims.length > 0 ? (
+                filteredClaims.map((claim) => (
+                  <div
+                    key={claim.id}
+                    className="claim-item cursor-pointer hover:bg-gray-700 rounded-lg p-2"
+                    onClick={() => handleClaimClick(claim)}
+                  >
+                    <h3 className="text-white">{claim.title}</h3>
+                    {/* Add more claim details here */}
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-400">No claims found.</p>
+              )}
             </div>
 
             {/* Filters by Category */}
@@ -473,12 +474,18 @@ const InfluencerDetailPage = () => {
                       >
                         View Source
                       </a>
-                      <ExternalLink className="h-4 w-4" />
+                      <Link
+                        to={claim.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Link>
                     </div>
                   </div>
                   {/* AI Analysis */}
                   {secondToggle && (
-                    <div className="flex flex-col items-start mt-4 ml-1 space-y-2">
+                    <div className="flex flex-col items-start mt-6 ml-1 space-y-2">
                       {/* AI Analysis section */}
                       <div className="flex items-center gap-2">
                         <Brain className="text-emerald-400 p-1" />
@@ -486,22 +493,36 @@ const InfluencerDetailPage = () => {
                       </div>
 
                       {/* Research description section */}
-                      <div className="flex items-center gap-2">
-                        {/* <p className="text-gray-400">{research.title}</p> */}
-                      </div>
+                      {researchData[claim._id] && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            <p className="text-gray-400 font-medium ml-1">
+                              {researchData[claim._id].title}
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
                       {/* View Research section */}
-                      <div className="flex items-center gap-2 text-emerald-400">
-                        <a
-                          href={claim.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline ml-1"
-                        >
-                          View Research
-                        </a>
-                        <ExternalLink className="h-4 w-4" />
-                      </div>
+                      {researchData[claim._id] && (
+                        <div className="flex items-center gap-2 text-emerald-400">
+                          <a
+                            href={researchData[claim._id].link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:underline ml-1"
+                          >
+                            View Research
+                          </a>
+                          <Link 
+                            to={researchData[claim._id].link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

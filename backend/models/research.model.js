@@ -3,6 +3,10 @@ import mongoose from "mongoose";
 // Define the schema for individual claims
 const researchSchema = new mongoose.Schema(
   {
+    journal: {
+      type: String,
+      required: [true, "Journal is required!"],
+    },
     category: {
       type: [String],
       required: [true, "Category is required!"],

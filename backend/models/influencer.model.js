@@ -4,7 +4,6 @@ const influencerSchema = new mongoose.Schema(
   {
     rank: {
       type: Number,
-      required: [true, "Rank is required!"],
     },
     name: {
       type: String,
@@ -13,6 +12,10 @@ const influencerSchema = new mongoose.Schema(
     category: {
       type: String,
       required: [true, "Category is required!"],
+    },
+    bio: {
+      type: String,
+      required: [true, "Bio is required!"],
     },
     trustScore: {
       type: Number,
