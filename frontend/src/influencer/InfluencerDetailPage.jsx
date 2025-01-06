@@ -29,6 +29,8 @@ const InfluencerDetailPage = () => {
   const [filteredClaims, setFilteredClaims] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedStatus, setSelectedStatus] = useState('All Statuses');
+  const [selectedClaimId, setSelectedClaimId] = useState(null);
+  const [isDropdownVisible, setIsDropdownVisible] = useState(true); // Controls the visibility of the dropdown
 
   const [activeTab, setActiveTab] = useState('Claims Analysis');
   const [searchQuery, setSearchQuery] = useState('');
@@ -203,8 +205,10 @@ const InfluencerDetailPage = () => {
 
   // Handle claim click, updating the filtered list to show only the clicked claim
   const handleClaimClick = (claim) => {
+    setSelectedClaimId(claim.id);
     setSearchQuery(claim.title); // Update search query to the selected claim
     setFilteredClaims([claim]); // Filter the list to show only the selected claim
+    setIsDropdownVisible(false);   // Hide the dropdown after selecting a claim
   };
 
   if (loading) return <div className="min-h-screen bg-gray-900 p-8">Loading...</div>;
@@ -321,7 +325,12 @@ const InfluencerDetailPage = () => {
                 onChange={(e) => {
                   const query = e.target.value;
                   setSearchQuery(query);
-                  setFilteredClaims(filterClaims(query));
+                  // If the search query is empty, reset filtered claims to show all
+                  if (query === '') {
+                    setFilteredClaims(null);  // Reset to the full list of claims
+                    setIsDropdownVisible(true);  // Optionally reset dropdown visibility when search is cleared
+                  }
+                  setFilteredClaims(filterClaims(query));  // Filter claims based on query
                 }}
               />
             </div>
@@ -329,18 +338,23 @@ const InfluencerDetailPage = () => {
             {/* Display filtered claims */}
             <div>
               {searchQuery && filteredClaims.length > 0 ? (
-                filteredClaims.map((claim) => (
-                  <div
-                    key={claim.id}
-                    className="claim-item cursor-pointer hover:bg-gray-700 rounded-lg p-2"
-                    onClick={() => handleClaimClick(claim)}
-                  >
-                    <h3 className="text-white">{claim.title}</h3>
-                    {/* Add more claim details here */}
+                isDropdownVisible && (
+                  <div className="dropdown-list">
+                    {filteredClaims.map((claim) => (
+                      <h3
+                        key={claim.id}
+                        className={`claim-item text-white ${selectedClaimId && selectedClaimId !== claim.id ? 'hidden' : ''}`}
+                        onClick={() => handleClaimClick(claim)} // Close dropdown on click
+                      >
+                        {claim.title}
+                      </h3>
+                    ))}
                   </div>
-                ))
+                )
               ) : (
-                <p className="text-gray-400">No claims found.</p>
+                searchQuery && filteredClaims.length === 0 && (
+                  <p className="text-gray-400">No claims found.</p>
+                )
               )}
             </div>
 

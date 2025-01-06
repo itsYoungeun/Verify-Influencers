@@ -52,3 +52,9 @@
 .toggle-slider:checked:before {
   transform: translateX(20px);
 }
+
+/* Hover effect for the dropdown list items */
+.claim-item:hover {
+  background-color: rgba(139, 139, 139, 0.35);  /* Change background color on hover */
+  cursor: pointer;            /* Add pointer cursor */
+}
