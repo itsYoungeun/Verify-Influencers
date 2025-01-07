@@ -13,10 +13,13 @@ const LeaderboardPage = () => {
     
     const fetchInfluencers = async () => {
       try {
-        const response = await fetch('/api/influencers'); // Proxy to the backend
+        const response = await fetch('/api/influencers'); // Adjust API endpoint to fetch influencers
         const data = await response.json();
-        setInfluencers(data);
-        setSortedInfluencers(data); // Optionally, you can sort here
+
+        // Filter influencers that have a rank
+        const influencersWithRank = data.filter(influencer => influencer.rank);
+        setInfluencers(influencersWithRank);
+        setSortedInfluencers(influencersWithRank); // Optionally, you can sort here
       } catch (error) {
         console.error('Error fetching influencers:', error);
       }
