@@ -13,13 +13,16 @@ const LeaderboardPage = () => {
     
     const fetchInfluencers = async () => {
       try {
-        const response = await fetch('/api/influencers'); // Adjust API endpoint to fetch influencers
+        const response = await fetch('/api/influencers');
         const data = await response.json();
 
-        // Filter influencers that have a rank
-        const influencersWithRank = data.filter(influencer => influencer.rank);
+        // Filter influencers that have a rank and sort by rank initially
+        const influencersWithRank = data
+          .filter(influencer => influencer.rank)
+          .sort((a, b) => a.rank - b.rank);
+          
         setInfluencers(influencersWithRank);
-        setSortedInfluencers(influencersWithRank); // Optionally, you can sort here
+        setSortedInfluencers(influencersWithRank);
       } catch (error) {
         console.error('Error fetching influencers:', error);
       }
@@ -53,11 +56,25 @@ const LeaderboardPage = () => {
 
   const handleCategoryFilter = (category) => {
     setSelectedCategory(category);
-    if (category === "All") {
-      setSortedInfluencers(influencers);
-    } else {
-      setSortedInfluencers(influencers.filter((influencer) => influencer.category === category));
+    
+    let filtered = [...influencers];
+    
+    // Apply category filter if not "All"
+    if (category !== "All") {
+      filtered = filtered.filter((influencer) => influencer.category === category);
     }
+    
+    // Apply current trust score sorting if active
+    if (isSortedByTrust) {
+      filtered.sort((a, b) => 
+        isSortedByTrust ? a.trustScore - b.trustScore : b.trustScore - a.trustScore
+      );
+    } else {
+      // Default sort by rank
+      filtered.sort((a, b) => a.rank - b.rank);
+    }
+    
+    setSortedInfluencers(filtered);
   };
 
   return (
