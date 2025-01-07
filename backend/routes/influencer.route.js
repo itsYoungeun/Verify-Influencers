@@ -4,12 +4,12 @@ import { createInfluencer, fetchInfluencer, getInfluencerById } from "../control
 const router = express.Router();
 
 // POST endpoint to upload influencer data
-router.post("/influencers", createInfluencer);
+router.post("/", createInfluencer);
 
 // GET all influencers
-router.get('/influencers', fetchInfluencer);
+router.get('/', fetchInfluencer);
 
 // **GET a single influencer by ID**
-router.get('/influencers/:id', getInfluencerById);
+router.get('/:id', getInfluencerById);
 
 export default router;

@@ -8,12 +8,15 @@ const categories = [
   "Stress", "Cognition", "Motivation", "Recovery", "Mental Health"
 ]; // Example categories
 
+const journals = ["New England Journal of Medicine", "PubMed Central", "Nature", "Science", 
+  "Cell", "The Lancet", "JAMA"];
+
 const AddResearchForm = () => {
   const [newResearch, setNewResearch] = useState({
     category: [], // Array to store selected categories
+    journal: [],
     title: "",
     link: "",
-    journal: "",
   });
 
   const { addResearch, loading } = useResearchStore(); // Adjust this to match your research store
@@ -77,14 +80,20 @@ const AddResearchForm = () => {
           <label htmlFor="journal" className="block text-sm font-medium text-gray-300">
             Journal
           </label>
-          <input
-            type="text"
+          <select
             id="journal"
             value={newResearch.journal}
             onChange={(e) => setNewResearch({ ...newResearch, journal: e.target.value })}
             className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             required
-          />
+          >
+            <option value="">Select a journal</option>
+            {journals.map((journal) => (
+              <option key={journal} value={journal}>
+                {journal}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>

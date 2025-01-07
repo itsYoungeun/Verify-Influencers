@@ -15,6 +15,10 @@ const claimSchema = new mongoose.Schema(
       type: String,
       required: [true, "Link is required!"],
     },
+    name: {
+      type: String,
+      required: [true, "Link is required!"],
+    },
     date: {
       type: String,
       required: [true, "Date is required!"],

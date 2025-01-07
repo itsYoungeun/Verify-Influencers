@@ -1,12 +1,12 @@
 import express from "express";
-import { addClaim, getClaimsByCategory } from "../controllers/claim.controller.js";
+import { addClaim, getClaimsByName } from "../controllers/claim.controller.js";
 
 const router = express.Router();
 
 // POST: Create a new claim
-router.post("/claims", addClaim);
+router.post("/", addClaim);
 
 // GET: Get all claims
-router.get("/claims", getClaimsByCategory);
+router.get("/", getClaimsByName);
 
 export default router;

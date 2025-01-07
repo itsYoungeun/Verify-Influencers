@@ -10,6 +10,7 @@ const AddClaimForm = () => {
     category: [], // Array to store selected categories
     title: "",
     link: "",
+    name: "",
     date: "",
   });
 
@@ -24,6 +25,7 @@ const AddClaimForm = () => {
         category: [], // Reset categories after submission
         title: "",
         link: "",
+        name: "",
         date: "",
       });
     } catch (error) {
@@ -94,6 +96,20 @@ const AddClaimForm = () => {
             value={newClaim.link}
             onChange={(e) => setNewClaim({ ...newClaim, link: e.target.value })}
             placeholder="https://example.com"
+            className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-300">
+            Name
+          </label>
+          <input
+            type="text"
+            id="name"
+            value={newClaim.name}
+            onChange={(e) => setNewClaim({ ...newClaim, name: e.target.value })}
             className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             required
           />

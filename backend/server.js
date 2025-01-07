@@ -23,9 +23,9 @@ app.use(cookieParser());
 app.use(cors());
 
 app.use("/api/auth", authRoutes);
-app.use("/api", influencerRoutes); // Use influencer routes here
-app.use("/api", claimRoutes);
-app.use("/api", researchRoutes);
+app.use("/api/influencers", influencerRoutes); // Use influencer routes here
+app.use("/api/claims", claimRoutes);
+app.use("/api/research", researchRoutes);
 
 if (process.env.NODE_ENV === "production") {
 	app.use(express.static(path.join(__dirname, "/frontend/dist")));

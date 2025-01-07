@@ -65,16 +65,6 @@ const InfluencerDetailPage = () => {
     return [mainCategory, ...(categoryRelationships[mainCategory] || [])];
   };
 
-  // Helper function to shuffle the claims randomly
-  const shuffleArray = (array) => {
-    const shuffledArray = [...array];
-    for (let i = shuffledArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]]; // Swap elements
-    }
-    return shuffledArray;
-  };
-
   // Filter claims based on the search query
   const filterClaims = (query) => {
     if (query) {
@@ -103,43 +93,64 @@ const InfluencerDetailPage = () => {
         const influencerData = await influencerResponse.json();
         setInfluencer(influencerData);
 
+        // Fetch claims by influencer name
+        const claimsResponse = await fetch(`/api/claims?name=${encodeURIComponent(influencerData.name)}`);
+        if (!claimsResponse.ok) throw new Error('Failed to fetch claims data');
+        const claimsData = await claimsResponse.json();
+
+        const enrichedClaims = claimsData.map(claim => ({ ...claim }));
+        setClaims(enrichedClaims);
+        setFilteredClaims(enrichedClaims);
+
+        // Set categories from the fetched claims
+        const uniqueCategories = [...new Set(enrichedClaims.flatMap(claim => claim.category))];
+        setDisplayCategories(uniqueCategories);
+        setFilterCategories(['All Categories', ...uniqueCategories]);
+
         if (influencerData.category) {
           const relatedCats = getRelatedCategories(influencerData.category);
           // Set display categories without "All Categories"
           setDisplayCategories(relatedCats);
           // Set filter categories with "All Categories"
           setFilterCategories(['All Categories', ...relatedCats]);
+        }
 
-          // Fetch claims using all related categories
-          const categoriesString = relatedCats.join(',');
+        // Fetch research data
+        if (uniqueCategories.length > 0) {
+          const categoriesString = uniqueCategories.join(',');
+          try {
+            // Fetch research data based on categories
+            const researchResponse = await fetch(`/api/research?categories=${categoriesString}`);
+            
+            if (!researchResponse.ok) throw new Error('Failed to fetch research data');
+            
+            const researchData = await researchResponse.json();
+            const matchedResearch = {};
 
-          // Fetch claims and research concurrently using Promise.all
-          const [claimsResponse, researchResponse] = await Promise.all([
-            fetch(`/api/claims?categories=${categoriesString}`),
-            fetch(`/api/research?categories=${categoriesString}`)
-          ]);
+            // Process each claim
+            enrichedClaims.forEach(claim => {
+              console.log("Claim being processed:", claim); // Log the structure of each claim
 
-          if (!claimsResponse.ok) throw new Error('Failed to fetch claims data');
-          if (!researchResponse.ok) throw new Error('Failed to fetch research data');
+              if (!claim || typeof claim.title !== 'string') {
+                console.error("Skipping invalid claim:", claim);
+                return; // Skip claims that are invalid
+              }
 
-          const claimsData = await claimsResponse.json();
-          const researchData = await researchResponse.json();
+              // Get the best research match for the current claim
+              const bestMatch = findBestResearchMatch(claim, researchData);
 
-          const enrichedClaims = claimsData.map(claim => ({ ...claim }));
+              // If a valid match is found, store it in matchedResearch
+              if (bestMatch) {
+                matchedResearch[claim._id] = bestMatch;
+              }
+            });
 
-          setClaims(enrichedClaims);
-          setFilteredClaims(enrichedClaims);
+            // After all claims have been processed, update the state with the matched research
+            setResearchData(matchedResearch);
 
-          // Match research data with claims
-          const matchedResearch = {};
-          enrichedClaims.forEach(claim => {
-            const bestMatch = findBestResearchMatch(claim.category, researchData);
-            if (bestMatch) {
-              matchedResearch[claim._id] = bestMatch;
-            }
-          });
-
-          setResearchData(matchedResearch);
+          } catch (error) {
+            console.error("Error fetching or processing research data:", error);
+          }
         }
         setLoading(false);
       } catch (err) {
@@ -154,18 +165,14 @@ const InfluencerDetailPage = () => {
   useEffect(() => {
     if (claims.length > 0) {
       let filtered = claims;
-  
+
       // Apply category filter
       if (selectedCategory !== 'All Categories') {
         filtered = filtered.filter(claim => 
           claim.category.includes(selectedCategory)
         );
-      } else {
-        // When "All Categories" is selected, shuffle the claims randomly based on influencer's categories
-        const randomClaims = shuffleArray(filtered);
-        filtered = randomClaims;
       }
-  
+    
       // Apply verification status filter
       filtered = filterClaimsByStatus(filtered, selectedStatus, secondToggle);
   

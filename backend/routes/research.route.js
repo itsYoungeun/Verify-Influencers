@@ -3,9 +3,9 @@ import { addResearch, getResearchByCategory } from "../controllers/research.cont
 
 const router = express.Router();
 
-router.post("/research", addResearch);
+router.post("/", addResearch);
 
-router.get("/research", getResearchByCategory);
+router.get("/", getResearchByCategory);
 
 export default router;
 

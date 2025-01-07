@@ -13,7 +13,7 @@ export const useClaimStore = create((set) => ({
     try {
       const res = await axios.post("/claims", claimData);
       set((prevState) => ({
-        claims: [...prevState.claims, res.data],
+        claims: [...prevState.claims, res.data.claim],
         loading: false,
       }));
       toast.success("Claim added successfully!");
