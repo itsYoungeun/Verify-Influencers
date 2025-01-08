@@ -48,16 +48,16 @@ const InfluencerDetailPage = () => {
 
   const categoryRelationships = {
     'Medicine': [
-      'Sleep', 'Hormones', 'Mental Health', 'Recovery'
+    'Mental Health', 'Sleep', 'Cognition', 'Chronic Illness Management', 'Recovery', 'Hormones'
     ],
     'Fitness': [
-      'Exercise', 'Performance', 'Nutrition', 'Recovery'
+        'Exercise', 'Injury Prevention', 'Endurance', 'Recovery', 'Flexibility', 'Performance'
     ],
     'Nutrition': [
-      'Sleep', 'Performance', 'Hormones', 'Mental Health'
+        'Gut Health', 'Metabolism', 'Hormones', 'Longevity', 'Recovery', 'Performance'
     ],
     'Mental Health': [
-      'Sleep', 'Stress', 'Cognition', 'Motivation'
+        'Stress', 'Emotional Regulation', 'Sleep', 'Cognition', 'Motivation', 'Mindfulness'
     ]
   };
 
@@ -466,7 +466,9 @@ const InfluencerDetailPage = () => {
                       ))}
                     </div>
                     <Calendar className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-400 text-sm">{moment(claim.date).format('MM/DD/YYYY')}</span>
+                    <span className="text-gray-400 text-sm">
+                      {moment(claim.date).format('MM/DD/YYYY')}
+                    </span>
                   </div>
                   {/* Right-aligned trust score */}
                   <div className="ml-auto flex items-center">
@@ -481,12 +483,12 @@ const InfluencerDetailPage = () => {
                           : 'text-red-500'
                       }`}
                     >
-                      {calculateClaimTrustScore(claim.date)}%
+                      {calculateClaimTrustScore(claim.date, claim.title)}%
                     </p>
                   </div>
                 </div>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium mb-2">{claim.title}</h3>
+                  <div className="flex justify-between">
+                    <h3 className="text-lg font-medium mb-2 w-3/4">{claim.title}</h3>
                     <p className="text-gray-400 leading-relaxed mb-2">Trust Score</p>
                   </div>
                   <div className="flex items-center justify-between">

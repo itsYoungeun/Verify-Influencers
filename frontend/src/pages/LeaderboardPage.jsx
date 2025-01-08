@@ -1,35 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Users, CheckCircle, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from "framer-motion";
+import { useNavigate } from 'react-router-dom';
 
 const LeaderboardPage = () => {
+  const navigate = useNavigate();
   const [influencers, setInfluencers] = useState([]);
   const [sortedInfluencers, setSortedInfluencers] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isSortedByTrust, setIsSortedByTrust] = useState(false);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    
-    const fetchInfluencers = async () => {
-      try {
-        const response = await fetch('/api/influencers');
-        const data = await response.json();
-
-        // Filter influencers that have a rank and sort by rank initially
-        const influencersWithRank = data
-          .filter(influencer => influencer.rank)
-          .sort((a, b) => a.rank - b.rank);
-          
-        setInfluencers(influencersWithRank);
-        setSortedInfluencers(influencersWithRank);
-      } catch (error) {
-        console.error('Error fetching influencers:', error);
-      }
-    };
-
-    fetchInfluencers();
-  }, []);
 
   const stats = [
     { icon: <Users className="w-6 h-6 text-emerald-400" />, value: "1,234", label: "Active Influencers" },
@@ -54,6 +33,15 @@ const LeaderboardPage = () => {
     setSortedInfluencers(sortedData);
   };
 
+  const navigateToInfluencerDetail = (id) => {
+    navigate(`/influencers/${id}`, {
+      state: { 
+        timeRange: location.state?.timeRange,
+        claimsCount: location.state?.claimsCount
+      }
+    });
+  };
+
   const handleCategoryFilter = (category) => {
     setSelectedCategory(category);
     
@@ -76,6 +64,29 @@ const LeaderboardPage = () => {
     
     setSortedInfluencers(filtered);
   };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    
+    const fetchInfluencers = async () => {
+      try {
+        const response = await fetch('/api/influencers');
+        const data = await response.json();
+
+        // Filter influencers that have a rank and sort by rank initially
+        const influencersWithRank = data
+          .filter(influencer => influencer.rank)
+          .sort((a, b) => a.rank - b.rank);
+          
+        setInfluencers(influencersWithRank);
+        setSortedInfluencers(influencersWithRank);
+      } catch (error) {
+        console.error('Error fetching influencers:', error);
+      }
+    };
+
+    fetchInfluencers();
+  }, []);
 
   return (
     <motion.div 
@@ -143,12 +154,17 @@ const LeaderboardPage = () => {
                   <td className="p-4 font-medium">#{influencer.rank}</td>
                   <td className="p-4">
                     <div className="flex items-center space-x-3">
-                      <img
-                        src={influencer.imageUrl}
-                        alt={influencer.name}
-                        className="w-10 h-10 rounded-full"
-                      />
-                      <span className="font-medium">{influencer.name}</span>
+                      <button 
+                        className="flex items-center"
+                        onClick={() => navigateToInfluencerDetail(influencer._id)}
+                      >
+                        <img
+                          src={influencer.imageUrl}
+                          alt={influencer.name}
+                          className="w-10 h-10 rounded-full mr-3"
+                        />
+                        <span className="font-medium">{influencer.name}</span>
+                      </button>
                     </div>
                   </td>
                   <td className="p-4">{influencer.category}</td>

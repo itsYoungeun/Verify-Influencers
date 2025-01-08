@@ -1,35 +1,42 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { PlusCircle, Loader } from "lucide-react";
-import { useClaimStore } from "../stores/useClaimStore"; // Adjust this import to your store's path
+import { PlusCircle, Loader, X, Plus } from "lucide-react";
+import { useClaimStore } from "../stores/useClaimStore";
 
-const categories = ["Sleep", "Performance", "Hormones", "Nutrition", "Exercise", "Stress", "Cognition", "Motivation", "Recovery", "Mental Health"]; // Example categories
+const categories = [
+  "Chronic Illness Management", "Cognition", "Endurance", "Emotional Regulation", "Exercise", 
+  "Fitness", "Flexibility", "Gut Health", "Hormones", "Injury Prevention", "Longevity", 
+  "Medicine", "Mental Health", "Metabolism", "Mindfulness", "Motivation", "Nutrition", 
+  "Performance", "Recovery", "Sleep", "Stress"
+];
 
-const AddClaimForm = () => {
-  const [newClaim, setNewClaim] = useState({
-    category: [], // Array to store selected categories
-    title: "",
+const AddMultipleClaimsForm = () => {
+  const [sharedData, setSharedData] = useState({
+    category: [],
     link: "",
     name: "",
     date: "",
   });
 
-  const { addClaim, loading } = useClaimStore(); // Adjust this to match your claim store
+  const [titles, setTitles] = useState([""]);
+  const { addClaim, loading } = useClaimStore();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      await addClaim(newClaim); // Call the store's function to add the claim
-      console.log("Claim added successfully!");
-      setNewClaim({
-        category: [], // Reset categories after submission
-        title: "",
-        link: "",
-        name: "",
-        date: "",
-      });
+      // Submit a claim for each title with the shared metadata
+      await Promise.all(titles.filter(title => title.trim()).map(title => 
+        addClaim({
+          ...sharedData,
+          title: title.trim(),
+        })
+      ));
+      console.log("Claims added successfully!");
+      
+      // Reset only the titles array, keeping other metadata
+      setTitles([""]);
     } catch (error) {
-      console.error("Error adding claim:", error);
+      console.error("Error adding claims:", error);
     }
   };
 
@@ -37,12 +44,28 @@ const AddClaimForm = () => {
     const category = event.target.value;
     const isChecked = event.target.checked;
 
-    setNewClaim((prevClaim) => {
-      const updatedCategories = isChecked
-        ? [...prevClaim.category, category] // Add category to the array
-        : prevClaim.category.filter((cat) => cat !== category); // Remove category from the array if unchecked
-      return { ...prevClaim, category: updatedCategories };
-    });
+    setSharedData(prev => ({
+      ...prev,
+      category: isChecked
+        ? [...prev.category, category]
+        : prev.category.filter(cat => cat !== category)
+    }));
+  };
+
+  const addNewTitle = () => {
+    setTitles([...titles, ""]);
+  };
+
+  const removeTitle = (index) => {
+    if (titles.length > 1) {
+      setTitles(titles.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateTitle = (index, value) => {
+    const newTitles = [...titles];
+    newTitles[index] = value;
+    setTitles(newTitles);
   };
 
   return (
@@ -52,81 +75,110 @@ const AddClaimForm = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8 }}
     >
-      <h2 className="text-2xl font-semibold mb-6 text-emerald-300">Add New Claim</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <h3 className="text-sm font-medium text-gray-300 mb-2">Categories</h3>
-          <div className="space-y-2">
-            {categories.map((category) => (
-              <div key={category} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  value={category}
-                  checked={newClaim.category.includes(category)} // Check if the category is already selected
-                  onChange={handleCategoryChange}
-                  className="h-4 w-4 text-emerald-500 focus:ring-emerald-500 border-gray-600"
-                />
-                <label className="text-gray-300">{category}</label>
-              </div>
-            ))}
+      <h2 className="text-2xl font-semibold mb-6 text-emerald-300">Add Multiple Claims</h2>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Multiple Titles Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium text-emerald-300">Claim Titles</h3>
+            <button
+              type="button"
+              onClick={addNewTitle}
+              className="text-emerald-500 hover:text-emerald-400"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
           </div>
+          
+          {titles.map((title, index) => (
+            <div key={index} className="flex items-center space-x-2">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => updateTitle(index, e.target.value)}
+                placeholder="Enter claim title"
+                className="flex-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                required
+              />
+              {titles.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeTitle(index)}
+                  className="text-red-500 hover:text-red-400"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+          ))}
         </div>
 
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-300">
-            Title
-          </label>
-          <input
-            type="text"
-            id="title"
-            value={newClaim.title}
-            onChange={(e) => setNewClaim({ ...newClaim, title: e.target.value })}
-            className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            required
-          />
-        </div>
+        {/* Shared Data Section */}
+        <div className="border-t border-gray-700 pt-6">
+          <h3 className="text-lg font-medium text-emerald-300 mb-4">Shared Information</h3>
+          
+          <div className="mb-4">
+            <h4 className="text-sm font-medium text-gray-300 mb-2">Categories</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {categories.map((category) => (
+                <div key={category} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    value={category}
+                    checked={sharedData.category.includes(category)}
+                    onChange={handleCategoryChange}
+                    className="h-4 w-4 text-emerald-500 focus:ring-emerald-500 border-gray-600"
+                  />
+                  <label className="text-gray-300">{category}</label>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        <div>
-          <label htmlFor="link" className="block text-sm font-medium text-gray-300">
-            Link
-          </label>
-          <input
-            type="url"
-            id="link"
-            value={newClaim.link}
-            onChange={(e) => setNewClaim({ ...newClaim, link: e.target.value })}
-            placeholder="https://example.com"
-            className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            required
-          />
-        </div>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="link" className="block text-sm font-medium text-gray-300">
+                Link
+              </label>
+              <input
+                type="url"
+                id="link"
+                value={sharedData.link}
+                onChange={(e) => setSharedData({ ...sharedData, link: e.target.value })}
+                placeholder="https://example.com"
+                className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                required
+              />
+            </div>
 
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-300">
-            Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            value={newClaim.name}
-            onChange={(e) => setNewClaim({ ...newClaim, name: e.target.value })}
-            className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            required
-          />
-        </div>
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-300">
+                Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={sharedData.name}
+                onChange={(e) => setSharedData({ ...sharedData, name: e.target.value })}
+                className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                required
+              />
+            </div>
 
-        <div>
-          <label htmlFor="date" className="block text-sm font-medium text-gray-300">
-            Date
-          </label>
-          <input
-            type="date"
-            id="date"
-            value={newClaim.date}
-            onChange={(e) => setNewClaim({ ...newClaim, date: e.target.value })}
-            className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            required
-          />
+            <div>
+              <label htmlFor="date" className="block text-sm font-medium text-gray-300">
+                Date
+              </label>
+              <input
+                type="date"
+                id="date"
+                value={sharedData.date}
+                onChange={(e) => setSharedData({ ...sharedData, date: e.target.value })}
+                className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                required
+              />
+            </div>
+          </div>
         </div>
 
         <button
@@ -142,7 +194,7 @@ const AddClaimForm = () => {
           ) : (
             <>
               <PlusCircle className="mr-2 h-5 w-5" />
-              Add Claim
+              Add Claims ({titles.filter(t => t.trim()).length})
             </>
           )}
         </button>
@@ -151,4 +203,4 @@ const AddClaimForm = () => {
   );
 };
 
-export default AddClaimForm;
+export default AddMultipleClaimsForm;
