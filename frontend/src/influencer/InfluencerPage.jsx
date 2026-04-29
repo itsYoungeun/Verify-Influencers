@@ -25,7 +25,7 @@ const InfluencerPage = () => {
       const fetchInfluencers = async () => {
         try {
           setLoading(true);
-          const response = await fetch("http://localhost:5000/api/influencers");
+          const response = await fetch("/api/influencers");
           if (!response.ok) {
             throw new Error("Failed to fetch data");
           }
