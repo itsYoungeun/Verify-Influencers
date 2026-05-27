@@ -16,6 +16,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Behind Vercel's proxy: trust the first hop so req.ip reflects the real
+// client IP (X-Forwarded-For). Without this, express-rate-limit throws.
+app.set("trust proxy", 1);
+
 const __dirname = path.resolve();
 
 // Allowed origins for credentialed (cookie-bearing) requests.
