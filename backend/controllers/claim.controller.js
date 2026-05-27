@@ -1,13 +1,10 @@
 import Claim from "../models/claim.model.js";
+import { searchPubMed } from "../lib/pubmed.js";
 
 // Add a new claim
 export const addClaim = async (req, res) => {
   try {
     const { category, title, link, name, date } = req.body;
-
-    if (!category || !title || !link || !name || !date) {
-      return res.status(400).json({ error: "All fields are required!" });
-    }
 
     const claim = new Claim({ category, title, link, name, date });
     await claim.save();
@@ -21,7 +18,7 @@ export const addClaim = async (req, res) => {
 export const getClaimsByName = async (req, res) => {
   try {
     const { name } = req.query;
-    
+
     if (!name) {
       return res.status(400).json({ error: "Name is required!" });
     }
@@ -33,20 +30,18 @@ export const getClaimsByName = async (req, res) => {
   }
 };
 
-// Fetch claims by categories
-// export const getClaimsByCategory = async (req, res) => {
-//   try {
-//     const { categories } = req.query; // Expecting categories to be a comma-separated string (e.g., "Health,Nutrition")
+// Verify a claim against PubMed peer-reviewed literature.
+// Returns real citations plus an evidence label/score for the topic.
+export const verifyClaim = async (req, res) => {
+  try {
+    const query = req.query.q || req.query.query;
+    if (!query) {
+      return res.status(400).json({ error: "A query (?q=) is required!" });
+    }
 
-//     if (!categories) {
-//       return res.status(400).json({ error: "Categories are required!" });
-//     }
-
-//     const categoryArray = categories.split(","); // Convert string into an array
-//     const claims = await Claim.find({ category: { $in: categoryArray } }); // Use $in operator to match any category
-
-//     res.status(200).json(claims);
-//   } catch (error) {
-//     res.status(500).json({ error: "Failed to fetch claims.", details: error.message });
-//   }
-// };
+    const result = await searchPubMed(query);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(502).json({ error: "Failed to fetch evidence from PubMed.", details: error.message });
+  }
+};

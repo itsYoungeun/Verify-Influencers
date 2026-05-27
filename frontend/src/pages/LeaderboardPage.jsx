@@ -9,6 +9,8 @@ const LeaderboardPage = () => {
   const [sortedInfluencers, setSortedInfluencers] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isSortedByTrust, setIsSortedByTrust] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const stats = [
     { icon: <Users className="w-6 h-6 text-emerald-400" />, value: "1,234", label: "Active Influencers" },
@@ -70,18 +72,24 @@ const LeaderboardPage = () => {
     
     const fetchInfluencers = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const response = await fetch('/api/influencers');
+        if (!response.ok) throw new Error('Failed to load leaderboard');
         const data = await response.json();
 
         // Filter influencers that have a rank and sort by rank initially
-        const influencersWithRank = data
+        const influencersWithRank = (Array.isArray(data) ? data : [])
           .filter(influencer => influencer.rank)
           .sort((a, b) => a.rank - b.rank);
-          
+
         setInfluencers(influencersWithRank);
         setSortedInfluencers(influencersWithRank);
-      } catch (error) {
-        console.error('Error fetching influencers:', error);
+      } catch (err) {
+        console.error('Error fetching influencers:', err);
+        setError(err.message || 'Something went wrong');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -135,6 +143,19 @@ const LeaderboardPage = () => {
         </div>
 
         {/* Leaderboard Table */}
+        {loading ? (
+          <div className="bg-gray-800 rounded-lg p-12 text-center text-gray-400">
+            Loading leaderboard…
+          </div>
+        ) : error ? (
+          <div className="bg-gray-800 rounded-lg p-12 text-center text-red-400">
+            {error}
+          </div>
+        ) : sortedInfluencers.length === 0 ? (
+          <div className="bg-gray-800 rounded-lg p-12 text-center text-gray-400">
+            No ranked influencers yet.
+          </div>
+        ) : (
         <div className="bg-gray-800 rounded-lg overflow-hidden">
           <table className="w-full">
             <thead>
@@ -192,6 +213,7 @@ const LeaderboardPage = () => {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </motion.div>
   );
