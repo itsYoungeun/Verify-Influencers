@@ -6,6 +6,7 @@ import axios from "../lib/axios";
 export const useInfluencerStore = create((set) => ({
   influencers: [],
   loading: false,
+  error: null,
 
   setInfluencers: (influencers) => set({ influencers }),
 
@@ -25,10 +26,10 @@ export const useInfluencerStore = create((set) => ({
   },
 
   fetchAllInfluencers: async () => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       const response = await axios.get("/influencers");
-      set({ influencers: response.data.influencers, loading: false });
+      set({ influencers: response.data, loading: false });
     } catch (error) {
       set({ error: "Failed to fetch influencers", loading: false });
       toast.error(error.response?.data?.error || "Failed to fetch influencers");

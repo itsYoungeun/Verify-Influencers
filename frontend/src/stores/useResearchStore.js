@@ -5,6 +5,7 @@ import axios from "../lib/axios";
 export const useResearchStore = create((set) => ({
   research: [],
   loading: false,
+  error: null,
 
   setResearch: (researchData) => set({ research: researchData }),
 
@@ -24,10 +25,10 @@ export const useResearchStore = create((set) => ({
   },
 
   fetchAllResearch: async () => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       const response = await axios.get("/research");
-      set({ research: response.data.research, loading: false });
+      set({ research: response.data, loading: false });
     } catch (error) {
       set({ error: "Failed to fetch research", loading: false });
       toast.error(error.response?.data?.error || "Failed to fetch research");

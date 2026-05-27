@@ -5,6 +5,7 @@ import axios from "../lib/axios";
 export const useClaimStore = create((set) => ({
   claims: [],
   loading: false,
+  error: null,
 
   setClaims: (claims) => set({ claims }),
 
@@ -24,10 +25,10 @@ export const useClaimStore = create((set) => ({
   },
 
   fetchAllClaims: async () => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       const response = await axios.get("/claims");
-      set({ claims: response.data.claims, loading: false });
+      set({ claims: response.data, loading: false });
     } catch (error) {
       set({ error: "Failed to fetch claims", loading: false });
       toast.error(error.response?.data?.error || "Failed to fetch claims");

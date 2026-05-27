@@ -18,9 +18,26 @@ const PORT = process.env.PORT || 5000;
 
 const __dirname = path.resolve();
 
-app.use(express.json());
+// Allowed origins for credentialed (cookie-bearing) requests.
+// Configure CLIENT_URL in production (comma-separated for multiple).
+const defaultOrigins = "http://localhost:5173,https://verify-influencers-ebon.vercel.app";
+const allowedOrigins = (process.env.CLIENT_URL || defaultOrigins)
+	.split(",")
+	.map((o) => o.trim())
+	.filter(Boolean);
+
+app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
-app.use(cors());
+app.use(
+	cors({
+		origin: (origin, callback) => {
+			// Allow same-origin / server-to-server requests (no Origin header).
+			if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+			return callback(new Error("Not allowed by CORS"));
+		},
+		credentials: true,
+	})
+);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/influencers", influencerRoutes); // Use influencer routes here

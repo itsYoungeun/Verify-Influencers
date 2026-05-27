@@ -58,6 +58,13 @@ CLOUDINARY_CLOUD_NAME=...
 CLOUDINARY_API_KEY=...
 CLOUDINARY_API_SECRET=...
 STRIPE_SECRET_KEY=...
+
+# CORS — comma-separated list of allowed origins (your deployed frontend URL)
+CLIENT_URL=https://your-app.vercel.app
+
+# Optional — raises PubMed rate limits and identifies your app to NCBI
+PUBMED_API_KEY=
+PUBMED_EMAIL=you@example.com
 ```
 
 ### 3. Run in development
@@ -74,6 +81,12 @@ npm run dev --prefix frontend
 npm run build
 ```
 
+### Tests
+```bash
+npm test
+```
+Unit tests (Vitest) cover request validation, the PubMed evidence mapping, and the claim-score logic. CI runs tests + frontend lint on every push/PR via GitHub Actions.
+
 ## API overview
 
 | Method | Endpoint                         | Access      | Description                          |
@@ -87,6 +100,7 @@ npm run build
 | GET    | `/api/influencers/:id`           | Public      | Get one influencer                   |
 | POST   | `/api/influencers`               | Admin       | Add influencer(s)                    |
 | GET    | `/api/claims?name=`              | Public      | Get claims for an influencer         |
+| GET    | `/api/claims/verify?q=`          | Public      | PubMed evidence + citations for a claim |
 | POST   | `/api/claims`                    | Admin       | Add a claim                          |
 | GET    | `/api/research?categories=`      | Public      | Get research by category             |
 | POST   | `/api/research`                  | Admin       | Add research                         |

@@ -6,15 +6,18 @@ import { findBestResearchMatch } from '../utils/calculateResearch';
 
 import { useEffect, useState } from 'react';
 import { useLocation, useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, Search, Calendar, 
+import axios from '../lib/axios';
+import {
+  ArrowLeft, Search, Calendar,
   Filter, ExternalLink,
   TrendingUp,
   TrendingDown,
   DollarSign,
   Package,
   Users,
-  Brain
+  Brain,
+  FlaskConical,
+  Loader2
 } from 'lucide-react';
 import { motion } from "framer-motion";
 import moment from 'moment';
@@ -38,8 +41,35 @@ const InfluencerDetailPage = () => {
 
   const [researchData, setResearchData] = useState({});
 
+  // PubMed evidence keyed by claim._id: { loading, error, data }
+  const [pubmedEvidence, setPubmedEvidence] = useState({});
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Fetch real peer-reviewed evidence for a claim from PubMed.
+  const checkPubMedEvidence = async (claim) => {
+    setPubmedEvidence((prev) => ({ ...prev, [claim._id]: { loading: true } }));
+    try {
+      const { data } = await axios.get('/claims/verify', { params: { q: claim.title } });
+      setPubmedEvidence((prev) => ({ ...prev, [claim._id]: { loading: false, data } }));
+    } catch (err) {
+      setPubmedEvidence((prev) => ({
+        ...prev,
+        [claim._id]: { loading: false, error: err.response?.data?.error || 'Failed to fetch evidence' },
+      }));
+    }
+  };
+
+  const evidenceColor = (label) => {
+    switch (label) {
+      case 'Strong': return 'bg-green-500/20 text-green-400';
+      case 'Moderate': return 'bg-emerald-500/20 text-emerald-400';
+      case 'Limited': return 'bg-yellow-500/20 text-yellow-400';
+      case 'Sparse': return 'bg-orange-500/20 text-orange-400';
+      default: return 'bg-red-500/20 text-red-400';
+    }
+  };
 
   const navigate = useNavigate();
   const handleGoBack = () => navigate(-1);
@@ -509,7 +539,61 @@ const InfluencerDetailPage = () => {
                         <ExternalLink className="h-4 w-4" />
                       </Link>
                     </div>
+                    {/* PubMed evidence check */}
+                    <button
+                      onClick={() => checkPubMedEvidence(claim)}
+                      disabled={pubmedEvidence[claim._id]?.loading}
+                      className="flex items-center gap-1.5 text-sm bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-200 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      {pubmedEvidence[claim._id]?.loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <FlaskConical className="h-4 w-4" />
+                      )}
+                      Check PubMed evidence
+                    </button>
                   </div>
+
+                  {/* PubMed evidence results */}
+                  {pubmedEvidence[claim._id] && !pubmedEvidence[claim._id].loading && (
+                    <div className="mt-4 border-t border-gray-700 pt-4">
+                      {pubmedEvidence[claim._id].error ? (
+                        <p className="text-red-400 text-sm">{pubmedEvidence[claim._id].error}</p>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${evidenceColor(pubmedEvidence[claim._id].data.evidence)}`}>
+                              Evidence: {pubmedEvidence[claim._id].data.evidence}
+                            </span>
+                            <span className="text-gray-400 text-sm">
+                              {pubmedEvidence[claim._id].data.total.toLocaleString()} PubMed result
+                              {pubmedEvidence[claim._id].data.total === 1 ? '' : 's'}
+                            </span>
+                          </div>
+                          {pubmedEvidence[claim._id].data.articles.length > 0 ? (
+                            <ul className="space-y-2">
+                              {pubmedEvidence[claim._id].data.articles.map((a) => (
+                                <li key={a.pmid} className="text-sm">
+                                  <a
+                                    href={a.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-emerald-400 hover:underline"
+                                  >
+                                    {a.title}
+                                  </a>
+                                  <span className="text-gray-500"> — {a.journal}{a.year ? `, ${a.year}` : ''}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-gray-400 text-sm">No peer-reviewed studies found for this claim.</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* AI Analysis */}
                   {secondToggle && (
                     <div className="flex flex-col items-start mt-6 ml-1 space-y-2">
