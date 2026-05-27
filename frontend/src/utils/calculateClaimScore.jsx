@@ -62,10 +62,6 @@ export const calculateClaimTrustScore = (claimDate, title = '') => {
     score -= uncertaintyPenalty;
   }
 
-  // Add a small random variance (-2 to +2)
-  const variance = (Math.random() * 4) - 2;
-  score += variance;
-
   // Normalize the score to be between 60 and 95
   const minScore = 60;
   const maxScore = 95;

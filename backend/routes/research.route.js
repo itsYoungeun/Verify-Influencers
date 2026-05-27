@@ -1,9 +1,10 @@
 import express from "express";
 import { addResearch, getResearchByCategory } from "../controllers/research.controller.js";
+import { protectRoute, adminRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/", addResearch);
+router.post("/", protectRoute, adminRoute, addResearch);
 
 router.get("/", getResearchByCategory);
 
